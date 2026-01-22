@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+  /* Tối ưu tràn viền */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  /* Thanh tìm kiếm cố định */
+  .header-wrapper {
+    position: sticky;
+    top: 0;
+    background: #ffffff;
+    padding: 12px;
+    z-index: 100;
+    border-bottom: 1px solid #f0f0f0;
+    width: 100%;
+  }
+
+  #searchInput {
+    width: 100%;
+    padding: 12px 18px;
+    border: 1px solid #dfe1e5;
+    border-radius: 24px;
+    font-size: 16px;
+    outline: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    display: block;
+  }
+
+  /* Container chứa danh sách */
+  .content-container {
+    width: 100%;
+  }
+
+  /* Tiêu đề Section */
+  .section-header {
+    background-color: #f8f9fa;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a73e8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+
+  .toggle-icon::after {
+    content: '\25BC';
+    font-size: 10px;
+    color: #70757a;
+    transition: transform 0.2s ease;
+  }
+
+  .collapsed .toggle-icon::after {
+    transform: rotate(-90deg);
+  }
+
+  .section-content {
+    width: 100%;
+    max-height: 5000px; /* Đủ lớn để chứa danh sách */
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0, 1, 0, 1);
+  }
+
+  .collapsed + .section-content {
+    max-height: 0;
+  }
+
+  /* Hàng dự án - Tối ưu cho việc chạm ngón tay (Touch) */
+  .project-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 18px 20px;
+    text-decoration: none;
+    color: #3c4043;
+    border-bottom: 1px solid #f1f1f1;
+    font-size: 16px;
+    line-height: 1.4;
+    transition: background 0.15s;
+  }
+
+  .project-item:active, .project-item:hover {
+    background-color: #f8f9fa;
+  }
+
+  .project-item span {
+    flex: 1;
+    padding-right: 15px;
+  }
+
+  .project-item::after {
+    content: "→";
+    color: #bdc1c6;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Tối ưu Mobile */
+  @media (max-width: 600px) {
+    .project-item {
+      padding: 18px 15px;
+      font-size: 15px; /* Font chữ vừa phải trên mobile */
+    }
+    .section-header {
+      padding: 12px 15px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="header-wrapper">
+  <input type="text" id="searchInput" onkeyup="searchFunction()" placeholder="🔍 Tìm kiếm nhanh...">
+</div>
+
+<div class="content-container">
+  <div class="section-header" onclick="toggleSection(this)">
+    <span>Thông tin chung</span>
+    <span class="toggle-icon"></span>
+  </div>
+  <div id="generalInfoList" class="section-content"></div>
+
+  <div class="section-header" onclick="toggleSection(this)">
+    <span>Hyper Team Dự án</span>
+    <span class="toggle-icon"></span>
+  </div>
+  <div id="projectList" class="section-content"></div>
+</div>
+
+<script>
+const generalData = [
+  ["❤️ ERA Vietnam ❤️", "https://chat.google.com/room/AAQAa4PECtg"],
+  ["💗 ERA - Congratulations 💗", "https://chat.google.com/room/AAQA90bCk2k"]
+]
+  
+const projectRawData = [
+  ["Maia Hồ Tràm - Hyper Team", "https://chat.google.com/room/AAQAZzUCWJs"],
+  ["The Win City - Hyper Team", "https://chat.google.com/room/AAQAlyttYHg"],
+  ["Vinhomes Pearl Bay - Hyper Team", "https://chat.google.com/room/AAQARQtplCs"],
+  ["LA Home - Hyper Team", "https://chat.google.com/room/AAQAoxZr1uw"],
+  ["The Ten - Hyper Team", "https://chat.google.com/room/AAQAyr0QXLg"],
+  ["Gladia by The Water - Hyper Team", "https://chat.google.com/room/AAQAljOn6s0"],
+  ["Eco Retreat - Hyper Team", "https://chat.google.com/room/AAQA1tY3q5Q"],
+  ["Green Skyline - Hyper Team", "https://chat.google.com/room/AAQAlueyRvg"],
+  ["T&T Millennia City - Hyper Team", "https://chat.google.com/room/AAQALiEbiiA"],
+  ["The Global City - Hyper Team", "https://chat.google.com/room/AAQAOTsjKKY"],
+  ["Habitat - Hyper Team", "https://chat.google.com/room/AAQAB26Siro"],
+  ["Blanca City - Hyper Team", "https://chat.google.com/room/AAQAwgdg0D0"],
+  ["Newtown Diamond - Hyper Team", "https://chat.google.com/room/AAQAHAI-_Po"],
+  ["Sunshine Sky City - Hyper Team", "https://chat.google.com/room/AAQA-tZhix4"],
+  ["The Legend Đà Nẵng - Hyper Team", "https://chat.google.com/room/AAQA69s9pQ0"],
+  ["Sycamore - Hyper Team", "https://chat.google.com/room/AAQA301xT5g"],
+  ["Capital Square - Hyper Team", "https://chat.google.com/room/AAQAsejLBLM"],
+  ["The Glory - Hyper Team", "https://chat.google.com/room/AAQADYOXj4o"],
+  ["Vinhomes Grand Park - Hyper Team", "https://chat.google.com/room/AAQA0syI4E0"],
+  ["Vinhomes Green Paradise - Hyper Team", "https://chat.google.com/room/AAQAs8mO8Tg"],
+  ["Essensia Broadway - Hyper Team", "https://chat.google.com/room/AAQAxpeQx6g"],
+  ["The Gió Riverside - Hyper Team", "https://chat.google.com/room/AAQArdSO3zY"],
+  ["MT Eastmark City - Hyper Team", "https://chat.google.com/room/AAQACp01brw"],
+  ["Newtown Golf Villa - Hyper Team", "https://chat.google.com/room/AAQAcK7c3q0"],
+  ["Celesta - Hyper Team", "https://chat.google.com/room/AAQAPfVR1WU"],
+  ["The Marq - Hyper Team", "https://chat.google.com/room/AAQAu-vBjOw"],
+  ["Elyse Island - Hyper Team", "https://chat.google.com/room/AAQAksHzMWU"],
+  ["Izumi - Hyper Team", "https://chat.google.com/room/AAQAmsIEppc"],
+  ["Bcons - Hyper Team", "https://chat.google.com/room/AAQAkfSyhAQ"],
+  ["Celadon City - Hyper Team", "https://chat.google.com/room/AAQAzw1OywE"],
+  ["Landmark Đà Nẵng - Hyper Team", "https://chat.google.com/room/AAQAvUdGFhI"],
+  ["Vinhomes Cần Giờ MIK - Hyper Team", "https://chat.google.com/room/AAQAbb7W8z8"],
+  ["Setia Edenia - Hyper Team", "https://chat.google.com/room/AAQAu4NyRUo"],
+  ["Vinhomes Green City - Hyper Team", "https://chat.google.com/room/AAQA6W6nXL8"],
+  ["Nobu Đà Nẵng - Hyper Team", "https://chat.google.com/room/AAQAqk2us8g"],
+  ["One ERA - Hyper Team", "https://chat.google.com/room/AAQAXNZsLi0"],
+  ["The 9 Stellars - Hyper Team", "https://chat.google.com/room/AAQAGvCVW9Y"],
+  ["Eaton Park - Hyper Team", "https://chat.google.com/room/AAQA2Qmjtgw"],
+  ["Masteri Centre Point & Lumiere Boulevard - Hyper Team", "https://chat.google.com/room/AAQAuu8kaqo"],
+  ["Springville - Hyper Team", "https://chat.google.com/room/AAQAXyF4OGs"],
+  ["Mizuki - Hyper Team", "https://chat.google.com/room/AAQAG8_0EJw"],
+  ["Sunwah Pearl - Hyper Team", "https://chat.google.com/room/AAQApbeQnGc"],
+  ["The Filmore Đà Nẵng - Hyper Team", "https://chat.google.com/room/AAQAq75wfS8"],
+  ["Thảo Điền Green - Hyper Team", "https://chat.google.com/room/AAQA3_LQ2is"],
+  ["Fusion Resort & Villas Đà Nẵng - Hyper Team", "https://chat.google.com/room/AAQA6zqVla8"],
+  ["Elysian - Hyper Team", "https://chat.google.com/room/AAQAmmsouU8"],
+  ["Grand Marina SaiGon - Hyper Team", "https://chat.google.com/room/AAQAfPTmHaw"],
+  ["Phú Gia Bảo Lộc - Hyper Team", "https://chat.google.com/room/AAQA9TAcO-M"],
+  ["La Pura - Hyper Team", "https://chat.google.com/room/AAQATBrCNps"],
+  ["The Aspira - Hyper Team", "https://chat.google.com/room/AAQAl3-fva4"],
+  ["The Meadow - Hyper Team", "https://chat.google.com/room/AAQA_L-sBEg"],
+  ["The Rivus - Hyper Team", "https://chat.google.com/room/AAQA5yJfSQY"],
+  ["The Classia Khang Điền - Hyper Team", "https://chat.google.com/room/AAQAJkd_RXA"],
+  ["Salacia - Hyper Team", "https://chat.google.com/room/AAQAV2DVFkk"],
+  ["Hyatt Regency Hồ Tràm - Hyper Team", "https://chat.google.com/room/AAQAk6XmN8g"],
+  ["Costamigo - Hyper Team", "https://chat.google.com/room/AAQAmeNEigI"],
+  ["Swanbay - Hyper Team", "https://chat.google.com/room/AAQAho42u3s"],
+  ["D Junction - Hyper Team", "https://chat.google.com/room/AAQAbObg19I"],
+  ["Fulton - Hyper Team", "https://chat.google.com/room/AAQAWioOdFY"],
+  ["Alluvia - Hyper Team", "https://chat.google.com/room/AAQA4GCvGLA"],
+  ["The Ocean Resort QN - Hyper Team", "https://chat.google.com/room/AAQA7_opVcM"]
+].sort((a, b) => a[0].localeCompare(b[0], 'vi'));
+
+function toggleSection(header) {
+  header.classList.toggle('collapsed');
+}
+
+function createLink(item) {
+  const a = document.createElement('a');
+  a.href = item[1]; a.target = "_blank";
+  a.className = "project-item";
+  const span = document.createElement('span');
+  span.textContent = item[0];
+  a.appendChild(span);
+  return a;
+}
+
+function render(filter = "") {
+  const genList = document.getElementById('generalInfoList');
+  const proList = document.getElementById('projectList');
+  genList.innerHTML = ""; proList.innerHTML = "";
+
+  generalData.forEach(item => {
+    if (item[0].toUpperCase().includes(filter.toUpperCase())) genList.appendChild(createLink(item));
+  });
+
+  projectRawData.forEach(item => {
+    if (item[0].toUpperCase().includes(filter.toUpperCase())) proList.appendChild(createLink(item));
+  });
+}
+
+function searchFunction() {
+  const filter = document.getElementById("searchInput").value;
+  render(filter);
+  if(filter !== "") {
+    document.querySelectorAll('.section-header').forEach(h => h.classList.remove('collapsed'));
+  }
+}
+
+render();
+</script>
+</body>
+</html>
